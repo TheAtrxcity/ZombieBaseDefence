@@ -112,6 +112,7 @@ Top left shows costs for having certain building and the resources it would take
 It shows a farm, a water gatherer, shelter in the form of tents and watch towers.
 
 Top Right shows the exploration system. It shows a sideview of when the exploration happens. This is subject to change with the new exploration addon.
+
 ![Zombie Game Concept](https://github.com/TheAtrxcity/ZombieBaseDefence/blob/main/Images/Zombie%20Game%20Concept.png)
 
 ## References
