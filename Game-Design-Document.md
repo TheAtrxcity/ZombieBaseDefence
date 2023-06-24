@@ -50,6 +50,32 @@ The player can only watch what happens and see how well the player has prepared 
 
 The fun of the game should be balancing risk with for example carrying out higher level explorations to get better and more resources. And managing the colony well enough so noone dies of thirst, hunger or illness. The player should be able to try different strategies for example focusing on equipment for units or resources to build stronger defences. 
 
+### Exploration Addon:
+The map will be generated through random points.
+Then lines will be drawn between these points.
+The player can choose a path to walk through to said points.
+
+The player will move through a map after picking a destination.
+Random Encounters on the way. 
+- Enemies
+- - Traps by bandits 
+- - Zombies
+- - Wild Animals
+- Loot Crates
+- Frendies 
+
+Battles are turned based.
+Based on unit class 
+- - Brawlers
+- - Gunner
+- - Snipers
+
+### Building Addon:
+Units go in watch towers changes how they work.
+Upgrading watch towers increases health and range.
+When building walls they will connect to another wall close by and draw a line.
+![Grid and Wall System Reference](https://github.com/TheAtrxcity/ZombieBaseDefence/blob/main/Images/Reference%20Wall%20building%20and%20grid%20system.png)
+
 
 ## Enemy Design
 
@@ -80,3 +106,13 @@ The higher the location the better the rewards but the more dangerous it is.
 - Fields for crops
 - Towers (watchtowers and turrets)
 - Hospital
+
+## Concept Art
+Top left shows costs for having certain building and the resources it would take to make them. It shows shelters giving you population spots.
+It shows a farm, a water gatherer, shelter in the form of tents and watch towers.
+
+Top Right shows the exploration system. It shows a sideview of when the exploration happens. This is subject to change with the new exploration addon.
+![Zombie Game Concept](https://github.com/TheAtrxcity/ZombieBaseDefence/blob/main/Images/Zombie%20Game%20Concept.png)
+
+## References
+ [Ninja Village Battle System](https://www.youtube.com/watch?v=JKXopHzWBKI) Around 1.56
