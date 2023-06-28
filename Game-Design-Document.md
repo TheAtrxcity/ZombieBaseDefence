@@ -117,3 +117,6 @@ Top Right shows the exploration system. It shows a sideview of when the explorat
 
 ## References
  [Ninja Village Battle System](https://www.youtube.com/watch?v=JKXopHzWBKI) Around 1.56
+
+## Extra Ideas
+Units have tiers, the higher the tier the more upkeep they cost ex Water and Food. 
