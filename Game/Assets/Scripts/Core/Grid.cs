@@ -1,151 +1,151 @@
-using System;
 using System.Collections.Generic;
-using TMPro.EditorUtilities;
+using System.Linq.Expressions;
 using UnityEngine;
 
-public class Grid
+public class Grid : MonoBehaviour
 {
-    private int _width;
-    private int _height;
-    private int _cellSize;
+    [Header("Grid Settings")]
+    [SerializeField] private int _gridWidth;
+    [SerializeField] private int _gridHeight;
+    [SerializeField] private int _gridCellSize;
+    [Space(10f)]
+    [SerializeField] private Vector2Int _gridOrigin;
 
-    private int[,] _grid;
+    [Header("Debug")]
+    [SerializeField] private GameObject _debugPrefab;
+    [SerializeField] private GameObject _debugPrefabBig;
 
-    private Vector2Int _gridOriginPosition;
+    private bool[,] _grid;
 
-    //private List<GameObject> _debugWalls;
-    private GameObject[,] _debugWalls;
+    private List<GameObject> _gridObjects;
 
-    public Grid(int width, int height, int cellSize, Vector2Int origin)
+    private Camera _sceneCamera;
+
+    private void Awake()
     {
-        _width = width;
-        _height = height;
-        _cellSize = cellSize;
-        _gridOriginPosition = origin;
+        _sceneCamera = Camera.main;
 
-        _grid = new int[_width, _height];
+        _grid = new bool[_gridWidth, _gridHeight];
+        _gridObjects = new List<GameObject>();
 
-        _debugWalls = new GameObject[_width, _height];
-
-        for (int x = 0; x < _width; x++)
+        for (int x = 0; x < _gridWidth; x++)
         {
-            for (int y = 0; y < _height; y++)
+            for (int y = 0; y < _gridHeight; y++)
             {
-                Debug.DrawLine((Vector2)GetWorldPosition(x, y), (Vector2)GetWorldPosition(x + 1, y), Color.red, 100f);
-                Debug.DrawLine((Vector2)GetWorldPosition(x, y), (Vector2)GetWorldPosition(x, y + 1), Color.red, 100f);
-            }
+                Vector2 start = GetCellWorldPosition(x, y);
 
-            Debug.DrawLine((Vector2)GetWorldPosition(0, _height), (Vector2)GetWorldPosition(_width, _height), Color.red, 100f);
-            Debug.DrawLine((Vector2)GetWorldPosition(_width, 0), (Vector2)GetWorldPosition(_width, _height), Color.red, 100f);
+                Debug.DrawLine(start, (Vector2)GetCellWorldPosition(x + 1, y), Color.red, 500f);
+                Debug.DrawLine(start, (Vector2)GetCellWorldPosition(x, y + 1), Color.red, 500f);
+            }
         }
     }
 
-    private Vector2Int GetWorldPosition(int x, int y) => new Vector2Int(x, y) * _cellSize + _gridOriginPosition;
-
-    private Vector2Int GetCell(Vector2 worldPosition)
+    private void Update()
     {
-        Vector2Int vec = new()
+        SpawnDebugObject();
+    }
+
+    private Vector2Int GetCellWorldPosition(int x, int y)
+    {
+        Vector2Int vec = new Vector2Int
         {
-            x = Mathf.FloorToInt((worldPosition - _gridOriginPosition).x / _cellSize),
-            y = Mathf.FloorToInt((worldPosition - _gridOriginPosition).y / _cellSize)
-        };
+            x = Mathf.FloorToInt(x),
+            y = Mathf.FloorToInt(y)
+        } * _gridCellSize + _gridOrigin;
 
         return vec;
     }
 
-    public void SetCellValue(Vector2 position, int value)
+    private Vector2Int GetCellWorldPositionCentred(int x, int y)
     {
-        Vector2Int cell = GetCell(position);
-
-        if (InGridBounds(cell))
-        {
-            _grid[cell.x, cell.y] = value;
-        }
-    }
-
-    public int GetCellValue(Vector2 position)
-    {
-        Vector2Int cell = GetCell(position);
-
-        if (InGridBounds(cell))
-        {
-            return _grid[cell.x, cell.y];
-        }
-
-        return -1;
-    }
-
-    public void AddDebugWall(Vector2 position)
-    {
-        Vector2Int cell = GetCell(position);
-
-        if (InGridBounds(cell))
-        {
-            GameObject wall = new("Wall");
-            wall.transform.position = (Vector2)GetWorldPosition(cell.x, cell.y) + new Vector2(_cellSize, _cellSize) * 0.5f;
-
-            Texture2D texture = new(32, 32);
-            for (int i = 0; i < 32; i++)
-            {
-                for (int j = 0; j < 32; j++)
-                {
-                    texture.SetPixel(i, j, Color.white);
-                }
-            }
-
-            Rect rect = new(Vector2.zero, new Vector2(32, 32));
-
-            wall.AddComponent<SpriteRenderer>();
-            wall.GetComponent<SpriteRenderer>().sprite = Sprite.Create(texture, rect, Vector2.zero);
-            wall.transform.localScale = new Vector2(5, 5);
-
-            SetCellValue(position, 1);
-
-            _debugWalls[cell.x, cell.y] = wall;
-        }
-    }
-
-    public bool AddWall(GameObject wallObject, Vector2 position)
-    {
-        Vector2Int cell = GetCell(position);
+        Vector2Int worldPosition = GetCellWorldPosition(x, y);
         
-        if (InGridBounds(cell) && GetCellValue(position) < 1)
-        {
-            Vector2 centredPosition = (Vector2)GetWorldPosition(cell.x, cell.y) +
-                new Vector2(_cellSize, _cellSize) * 0.5f;
+        Vector2Int centred = worldPosition + new Vector2Int(_gridCellSize, _gridCellSize) / 2;
 
-            wallObject.transform.position = centredPosition;
-            wallObject.transform.localScale = new Vector2(5, 5);
-
-            SetCellValue(position, 1);
-            _debugWalls[cell.x, cell.y] = wallObject;
-
-            return true;
-        }
-
-        return false;
+        return centred;
     }
 
-    public GameObject RemoveWall(Vector2 position)
+    private (int x, int y) GetCellPositionFromWorld(Vector2 worldPosition)
     {
-        Vector2Int cell = GetCell(position);
+        int cellX = Mathf.FloorToInt((worldPosition - _gridOrigin).x / _gridCellSize);
+        int cellY = Mathf.FloorToInt((worldPosition - _gridOrigin).y / _gridCellSize);
 
-        if (InGridBounds(cell) && GetCellValue(position) > 0)
-        {
-            SetCellValue(position, 0);
-            return _debugWalls[cell.x, cell.y];
-        }
-
-        return null;
+        return (cellX, cellY);
     }
 
-    private bool InGridBounds(Vector2Int cellVector)
+    private bool IsInGridBounds(int x, int y) => (x >= 0 && y >= 0 && x < _gridWidth && y < _gridHeight);
+
+    private bool IsCellOccupied(int x, int y) => _grid[x, y];
+
+    private bool AreCellsFree(int x, int y, int width, int height)
     {
-        if (cellVector.x >= 0 && cellVector.y >= 0 && cellVector.x < _width && cellVector.y < _height)
+        if (x + width > _gridWidth || y + height > _gridHeight)
         {
-            return true;
+            Debug.Log("Testing outside the grid is not possible.");
+            return false;
         }
 
-        return false;
+        for (int i = 0; i < width; i++)
+        {
+            for (int j = 0; j < height; j++)
+            {
+                Debug.Log($"Testing -> {x + i}, {y + j}");
+                Debug.Log($"Is Occupied -> {IsCellOccupied(x + i, y + j)}");
+
+                if (IsCellOccupied(x + i, y + j)) { return false; }
+            }
+        }
+
+        return true;
+    }
+
+    private void SetCellOccupation(int x, int y, bool newValue) => _grid[x, y] = newValue;
+
+    private void SetCellOccupations(int x, int y, int width, int height, bool newValue)
+    {
+        for (int i = 0; i < width; i++)
+        {
+            for (int j = 0; j < height; j++)
+            {
+                _grid[x + i, y + j] = newValue;
+            }
+        }
+    }
+    
+    private void SpawnDebugObject()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            Vector2 mousePosition = _sceneCamera.ScreenToWorldPoint(Input.mousePosition);
+
+            (int cellX, int cellY) = GetCellPositionFromWorld(mousePosition);
+            
+            if (IsInGridBounds(cellX, cellY))
+            {
+                if (IsCellOccupied(cellX, cellY)) { return; }
+
+                _gridObjects.Add
+                    (Instantiate(_debugPrefab, (Vector2)GetCellWorldPositionCentred(cellX, cellY), Quaternion.identity));
+                
+                SetCellOccupation(cellX, cellY, true);
+            }
+        }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            Vector2 mousePosition = _sceneCamera.ScreenToWorldPoint(Input.mousePosition);
+
+            (int cellX, int cellY) = GetCellPositionFromWorld(mousePosition);
+
+            if (IsInGridBounds(cellX, cellY))
+            {
+                if (!AreCellsFree(cellX, cellY, 2, 2)) { return; }
+
+                _gridObjects.Add
+                    (Instantiate(_debugPrefabBig, (Vector2)GetCellWorldPositionCentred(cellX, cellY), Quaternion.identity));
+
+                SetCellOccupations(cellX, cellY, 2, 2, true);
+            }
+        }
     }
 }
