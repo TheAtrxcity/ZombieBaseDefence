@@ -61,7 +61,6 @@ public class Grid : MonoBehaviour
     private void Update()
     {
         SpawnDebugObject();
-
         PreviewCell();
     }
 
