@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using System.Linq.Expressions;
+
 using UnityEngine;
 
 public class Grid : MonoBehaviour
@@ -11,6 +11,10 @@ public class Grid : MonoBehaviour
     [Space(10f)]
     [SerializeField] private Vector2Int _gridOrigin;
 
+    [Header("Visual Settings")]
+    [SerializeField] private GameObject _cellFreePreviewPrefab;
+    [SerializeField] private GameObject _cellOccupiedPreviewPrefab;
+
     [Header("Debug")]
     [SerializeField] private GameObject _debugPrefab;
     [SerializeField] private GameObject _debugPrefabBig;
@@ -20,6 +24,11 @@ public class Grid : MonoBehaviour
     private List<GameObject> _gridObjects;
 
     private Camera _sceneCamera;
+
+    private GameObject _cachedCellFreePreviewObject;
+    private GameObject _cachedCellOccupiedPreviewObject;
+
+    private Transform _dynamicTransform;
 
     private void Awake()
     {
@@ -34,15 +43,26 @@ public class Grid : MonoBehaviour
             {
                 Vector2 start = GetCellWorldPosition(x, y);
 
-                Debug.DrawLine(start, (Vector2)GetCellWorldPosition(x + 1, y), Color.red, 500f);
-                Debug.DrawLine(start, (Vector2)GetCellWorldPosition(x, y + 1), Color.red, 500f);
+                Debug.DrawLine(start, (Vector2)GetCellWorldPosition(x + 1, y), Color.blue, 500f);
+                Debug.DrawLine(start, (Vector2)GetCellWorldPosition(x, y + 1), Color.blue, 500f);
             }
         }
+
+        Transform previewTransform = GameObject.Find("@Preview").transform;
+        _dynamicTransform = GameObject.Find("@Dynamic").transform;
+        
+        _cachedCellFreePreviewObject = Instantiate(_cellFreePreviewPrefab, Vector2.zero, Quaternion.identity, previewTransform);
+        _cachedCellOccupiedPreviewObject = Instantiate(_cellOccupiedPreviewPrefab, Vector2.zero, Quaternion.identity, previewTransform);
+
+        _cachedCellFreePreviewObject.SetActive(false);
+        _cachedCellOccupiedPreviewObject.SetActive(false);
     }
 
     private void Update()
     {
         SpawnDebugObject();
+
+        PreviewCell();
     }
 
     private Vector2Int GetCellWorldPosition(int x, int y)
@@ -125,7 +145,7 @@ public class Grid : MonoBehaviour
                 if (IsCellOccupied(cellX, cellY)) { return; }
 
                 _gridObjects.Add
-                    (Instantiate(_debugPrefab, (Vector2)GetCellWorldPositionCentred(cellX, cellY), Quaternion.identity));
+                    (Instantiate(_debugPrefab, (Vector2)GetCellWorldPositionCentred(cellX, cellY), Quaternion.identity, _dynamicTransform));
                 
                 SetCellOccupation(cellX, cellY, true);
             }
@@ -142,9 +162,32 @@ public class Grid : MonoBehaviour
                 if (!AreCellsFree(cellX, cellY, 2, 2)) { return; }
 
                 _gridObjects.Add
-                    (Instantiate(_debugPrefabBig, (Vector2)GetCellWorldPositionCentred(cellX, cellY), Quaternion.identity));
+                    (Instantiate(_debugPrefabBig, (Vector2)GetCellWorldPositionCentred(cellX, cellY), Quaternion.identity, _dynamicTransform));
 
                 SetCellOccupations(cellX, cellY, 2, 2, true);
+            }
+        }
+    }
+
+    private void PreviewCell()
+    {
+        Vector2 mousePositionWorld = _sceneCamera.ScreenToWorldPoint(Input.mousePosition);
+
+        (int cellX, int cellY) = GetCellPositionFromWorld(mousePositionWorld);
+
+        if (IsInGridBounds(cellX, cellY))
+        {
+            if (IsCellOccupied(cellX, cellY))
+            {
+                _cachedCellFreePreviewObject.SetActive(false);
+                _cachedCellOccupiedPreviewObject.SetActive(true);
+                _cachedCellOccupiedPreviewObject.transform.position = (Vector2)GetCellWorldPositionCentred(cellX, cellY);
+            }
+            else if (!IsCellOccupied(cellX, cellY))
+            {
+                _cachedCellOccupiedPreviewObject.SetActive(false);
+                _cachedCellFreePreviewObject.SetActive(true);
+                _cachedCellFreePreviewObject.transform.position = (Vector2)GetCellWorldPositionCentred(cellX, cellY);
             }
         }
     }
