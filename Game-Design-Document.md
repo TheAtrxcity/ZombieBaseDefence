@@ -120,3 +120,4 @@ Top Right shows the exploration system. It shows a sideview of when the explorat
 
 ## Extra Ideas
 Units have tiers, the higher the tier the more upkeep they cost ex Water and Food. 
+Fog of war + vision
