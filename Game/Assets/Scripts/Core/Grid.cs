@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 using UnityEngine;
 
 public class Grid : MonoBehaviour
@@ -11,31 +9,23 @@ public class Grid : MonoBehaviour
     [Space(10f)]
     [SerializeField] private Vector2Int _gridOrigin;
 
-    [Header("Visual Settings")]
-    [SerializeField] private GameObject _cellFreePreviewPrefab;
-    [SerializeField] private GameObject _cellOccupiedPreviewPrefab;
-
-    [Header("Debug")]
-    [SerializeField] private GameObject _debugPrefab;
-    [SerializeField] private GameObject _debugPrefabBig;
+    public int Width => _gridWidth;
+    public int Height => _gridHeight;
+    public int CellSize => _gridCellSize;
+    public Vector2 GridOrigin => _gridOrigin;
 
     private bool[,] _grid;
-
-    private List<GameObject> _gridObjects;
 
     private Camera _sceneCamera;
 
     private GameObject _cachedCellFreePreviewObject;
     private GameObject _cachedCellOccupiedPreviewObject;
 
-    private Transform _dynamicTransform;
-
     private void Awake()
     {
         _sceneCamera = Camera.main;
 
         _grid = new bool[_gridWidth, _gridHeight];
-        _gridObjects = new List<GameObject>();
 
         for (int x = 0; x < _gridWidth; x++)
         {
@@ -47,21 +37,6 @@ public class Grid : MonoBehaviour
                 Debug.DrawLine(start, (Vector2)GetCellWorldPosition(x, y + 1), Color.blue, 500f);
             }
         }
-
-        Transform previewTransform = GameObject.Find("@Preview").transform;
-        _dynamicTransform = GameObject.Find("@Dynamic").transform;
-        
-        _cachedCellFreePreviewObject = Instantiate(_cellFreePreviewPrefab, Vector2.zero, Quaternion.identity, previewTransform);
-        _cachedCellOccupiedPreviewObject = Instantiate(_cellOccupiedPreviewPrefab, Vector2.zero, Quaternion.identity, previewTransform);
-
-        _cachedCellFreePreviewObject.SetActive(false);
-        _cachedCellOccupiedPreviewObject.SetActive(false);
-    }
-
-    private void Update()
-    {
-        SpawnDebugObject();
-        PreviewCell();
     }
 
     private Vector2Int GetCellWorldPosition(int x, int y)
@@ -108,8 +83,8 @@ public class Grid : MonoBehaviour
         {
             for (int j = 0; j < height; j++)
             {
-                Debug.Log($"Testing -> {x + i}, {y + j}");
-                Debug.Log($"Is Occupied -> {IsCellOccupied(x + i, y + j)}");
+                //Debug.Log($"[Debug]:: Testing -> {x + i}, {y + j}");
+                //Debug.Log($"[Debug]:: Is Occupied -> {IsCellOccupied(x + i, y + j)}");
 
                 if (IsCellOccupied(x + i, y + j)) { return false; }
             }
@@ -127,67 +102,49 @@ public class Grid : MonoBehaviour
             for (int j = 0; j < height; j++)
             {
                 _grid[x + i, y + j] = newValue;
-            }
-        }
-    }
-    
-    private void SpawnDebugObject()
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            Vector2 mousePosition = _sceneCamera.ScreenToWorldPoint(Input.mousePosition);
 
-            (int cellX, int cellY) = GetCellPositionFromWorld(mousePosition);
-            
-            if (IsInGridBounds(cellX, cellY))
-            {
-                if (IsCellOccupied(cellX, cellY)) { return; }
-
-                _gridObjects.Add
-                    (Instantiate(_debugPrefab, (Vector2)GetCellWorldPositionCentred(cellX, cellY), Quaternion.identity, _dynamicTransform));
-                
-                SetCellOccupation(cellX, cellY, true);
-            }
-        }
-
-        if (Input.GetMouseButtonDown(1))
-        {
-            Vector2 mousePosition = _sceneCamera.ScreenToWorldPoint(Input.mousePosition);
-
-            (int cellX, int cellY) = GetCellPositionFromWorld(mousePosition);
-
-            if (IsInGridBounds(cellX, cellY))
-            {
-                if (!AreCellsFree(cellX, cellY, 2, 2)) { return; }
-
-                _gridObjects.Add
-                    (Instantiate(_debugPrefabBig, (Vector2)GetCellWorldPositionCentred(cellX, cellY), Quaternion.identity, _dynamicTransform));
-
-                SetCellOccupations(cellX, cellY, 2, 2, true);
+                //Debug.Log($[Debug]:: "{x + i}, {y + j} set to occupied");
             }
         }
     }
 
-    private void PreviewCell()
+    public bool AddBuilding(Vector2 worldPosition, int width, int height)
     {
-        Vector2 mousePositionWorld = _sceneCamera.ScreenToWorldPoint(Input.mousePosition);
+        (int x, int y) = GetCellPositionFromWorld(worldPosition);
 
-        (int cellX, int cellY) = GetCellPositionFromWorld(mousePositionWorld);
-
-        if (IsInGridBounds(cellX, cellY))
+        if (IsInGridBounds(x, y))
         {
-            if (IsCellOccupied(cellX, cellY))
+            if (!AreCellsFree(x, y, width, height)) { Debug.Log("Building failed"); return false; }
+
+            SetCellOccupations(x, y, width, height, true);
+            Debug.Log("Building built");
+            return true;
+        }
+
+        return false;
+    }
+
+    public Vector2 GetPlacementPosition(Vector2 worldPosition)
+    {
+        (int x, int y) = GetCellPositionFromWorld(worldPosition);
+
+        Vector2Int centred = GetCellWorldPositionCentred(x, y);
+
+        return new Vector2(centred.x, centred.y);
+    }
+
+    public bool CanBuildHere(Vector2 worldPosition, int width, int height)
+    {
+        (int x, int y) = GetCellPositionFromWorld(worldPosition);
+
+        if (IsInGridBounds(x, y))
+        {
+            if (AreCellsFree(x, y, width, height))
             {
-                _cachedCellFreePreviewObject.SetActive(false);
-                _cachedCellOccupiedPreviewObject.SetActive(true);
-                _cachedCellOccupiedPreviewObject.transform.position = (Vector2)GetCellWorldPositionCentred(cellX, cellY);
-            }
-            else if (!IsCellOccupied(cellX, cellY))
-            {
-                _cachedCellOccupiedPreviewObject.SetActive(false);
-                _cachedCellFreePreviewObject.SetActive(true);
-                _cachedCellFreePreviewObject.transform.position = (Vector2)GetCellWorldPositionCentred(cellX, cellY);
+                return true;
             }
         }
+
+        return false;
     }
 }
