@@ -1,7 +1,5 @@
 using UnityEngine;
 
-using static BuildingData;
-
 public class BuildingSystem : MonoBehaviour
 {
 	[Header("Building Sprites")]
@@ -18,14 +16,26 @@ public class BuildingSystem : MonoBehaviour
 
 	private Building _selectedBuilding;
 
+	private BuildingData _tentData;
+	private BuildingData _rainCatcherData;
+	private BuildingData _cropFieldData;
+	private BuildingData _selectedBuildingData;
+
 	private GameObject _buildingPreviewObject;
 
     private void Start()
 	{
+		_tentData = new BuildingData(4, 4);
+		_rainCatcherData = new BuildingData(3, 2);
+		_cropFieldData = new BuildingData(3, 4);
+
         _selectedBuilding = Building.None;
 
 		_buildingPreviewObject = new GameObject("BuildingPreview", typeof(SpriteRenderer));
+		_buildingPreviewObject.transform.position += new Vector3(0, 0, -5);
 		_buildingPreviewObject.transform.parent = GameObject.Find("@Preview").transform;
+
+		Cursor.visible = false;
     }
 
     private void Update()
@@ -39,14 +49,14 @@ public class BuildingSystem : MonoBehaviour
 			switch (_selectedBuilding)
 			{
 				case Building.Tent:
-					if (_worldGrid.AddBuilding(worldMousePosition, Tent.width, Tent.height))
+					if (_worldGrid.AddBuilding(worldMousePosition, _selectedBuildingData.width, _selectedBuildingData.height))
 					{
 						MakeBuilding("Tent", _worldGrid.GetPlacementPosition(worldMousePosition), _tentSprite);
                     }
                     break;
 
                 case Building.RainCatcher:
-					if (_worldGrid.AddBuilding(worldMousePosition, RainCatcher.width, RainCatcher.height))
+					if (_worldGrid.AddBuilding(worldMousePosition, _selectedBuildingData.width, _selectedBuildingData.height))
 					{
 						var rc = Instantiate(_rainCatcherPrefab, _worldGrid.GetPlacementPosition(worldMousePosition), Quaternion.identity);
 
@@ -56,7 +66,7 @@ public class BuildingSystem : MonoBehaviour
                     break;
 
                 case Building.CropField:
-                    if (_worldGrid.AddBuilding(worldMousePosition, BuildingData.CropField.width, BuildingData.CropField.height))
+                    if (_worldGrid.AddBuilding(worldMousePosition, _selectedBuildingData.width, _selectedBuildingData.height))
                     {
                         var cf = Instantiate(_cropFieldPrefab, _worldGrid.GetPlacementPosition(worldMousePosition), Quaternion.identity);
 
@@ -69,13 +79,13 @@ public class BuildingSystem : MonoBehaviour
 
 		_buildingPreviewObject.transform.position = _worldGrid.GetPlacementPosition(InputHelper.Instance.GetMouseWorldPosition());
 
-		if (!_worldGrid.CanBuildHere(InputHelper.Instance.GetMouseWorldPosition(), 3, 3))
+		if (!_worldGrid.CanBuildHere(InputHelper.Instance.GetMouseWorldPosition(), _selectedBuildingData.width, _selectedBuildingData.height))
 		{
-			_buildingPreviewObject.GetComponent<SpriteRenderer>().color = Color.red;
+			_buildingPreviewObject.GetComponent<SpriteRenderer>().color = new Color(1, 0, 0, 0.75f);
         }
         else
 		{
-            _buildingPreviewObject.GetComponent<SpriteRenderer>().color = Color.white;
+			_buildingPreviewObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 0.75f);
         }
     }
 
@@ -91,6 +101,7 @@ public class BuildingSystem : MonoBehaviour
 		if (Input.GetKeyDown(KeyCode.Alpha2))
 		{
 			_selectedBuilding = Building.Tent;
+			_selectedBuildingData = _tentData;
 
 			_buildingPreviewObject.SetActive(true);
 			_buildingPreviewObject.GetComponent<SpriteRenderer>().sprite = _tentSprite;
@@ -99,6 +110,7 @@ public class BuildingSystem : MonoBehaviour
 		if (Input.GetKeyDown(KeyCode.Alpha3)) 
 		{
 			_selectedBuilding = Building.RainCatcher;
+			_selectedBuildingData = _rainCatcherData;
 
             _buildingPreviewObject.SetActive(true);
             _buildingPreviewObject.GetComponent<SpriteRenderer>().sprite = _rainCatcherSprite;
@@ -107,6 +119,7 @@ public class BuildingSystem : MonoBehaviour
 		if (Input.GetKeyDown(KeyCode.Alpha4)) 
 		{
 			_selectedBuilding = Building.CropField;
+			_selectedBuildingData = _cropFieldData;
 
             _buildingPreviewObject.SetActive(true);
             _buildingPreviewObject.GetComponent<SpriteRenderer>().sprite = _cropFieldSprite;
@@ -123,27 +136,6 @@ public class BuildingSystem : MonoBehaviour
     }
 }
 
-public static class BuildingData
-{
-	public struct Tent
-	{
-		public static int width  = 4;
-		public static int height = 4;
-	}
-
-	public struct RainCatcher
-	{
-        public static int width  = 3;
-        public static int height = 2;
-    }
-
-	public struct CropField
-	{
-        public static int width  = 3;
-        public static int height = 3;
-    }
-}
-
 public enum Building
 {
 	None,
@@ -151,3 +143,15 @@ public enum Building
 	RainCatcher,
 	CropField
 };
+
+public struct BuildingData
+{
+	public int width;
+	public int height;
+
+	public BuildingData(int width, int height)
+	{
+		this.width = width;
+		this.height = height;
+	}
+}

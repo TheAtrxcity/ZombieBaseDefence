@@ -128,9 +128,9 @@ public class Grid : MonoBehaviour
     {
         (int x, int y) = GetCellPositionFromWorld(worldPosition);
 
-        Vector2Int centred = GetCellWorldPositionCentred(x, y);
+        Vector2Int cellWorldPosition = GetCellWorldPosition(x, y);
 
-        return new Vector2(centred.x, centred.y);
+        return new Vector2(cellWorldPosition.x, cellWorldPosition.y);
     }
 
     public bool CanBuildHere(Vector2 worldPosition, int width, int height)
